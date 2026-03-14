@@ -1,436 +1,512 @@
--- VANGUARD HUB | VERSION 6.1.0
--- Optimized for Executors (Delta, Synapse, etc.)
-
+-- VANGUARD HUB V6.2 | RESPONSIVE UI
 local CoreGui = game:GetService("CoreGui")
-local MarketplaceService = game:GetService("MarketplaceService")
-local HttpService = game:GetService("HttpService")
+local UIS = game:GetService("UserInputService")
+local MPS = game:GetService("MarketplaceService")
+local Players = game:GetService("Players")
 
--- Xóa UI cũ
 if CoreGui:FindFirstChild("VanguardUI") then
     CoreGui.VanguardUI:Destroy()
 end
 
--- Generate HWID giả
-local function generateHWID()
-    local parts = {}
-    for i = 1, 4 do
-        local part = string.format("%04X", math.random(0, 65535))
-        table.insert(parts, part)
+-- ══════════════════════════════════════
+--  RESPONSIVE SCALE
+-- ══════════════════════════════════════
+local vp = workspace.CurrentCamera.ViewportSize
+local isMobile = vp.X < 600
+local scale = isMobile and 0.92 or 1
+
+local W  = isMobile and math.min(vp.X - 20, 340) or 580
+local H  = isMobile and 300 or 380
+local TH = isMobile and 28 or 32   -- titlebar height
+local SW = isMobile and 0 or 160   -- sidebar width (ẩn trên mobile)
+local FS = isMobile and 12 or 13   -- font size cơ bản
+local FSS = isMobile and 10 or 11  -- font size nhỏ
+
+-- ══════════════════════════════════════
+--  DETECT GAME
+-- ══════════════════════════════════════
+local gameName = "Unknown Game"
+pcall(function()
+    local info = MPS:GetProductInfo(game.PlaceId)
+    gameName = info.Name or "Unknown Game"
+end)
+
+local hwid = ""
+for i = 1, 4 do
+    hwid = hwid .. (i > 1 and "-" or "")
+    for _ = 1, 4 do
+        local r = math.random(0, 15)
+        hwid = hwid .. string.format("%X", r)
     end
-    return table.concat(parts, "-")
 end
 
--- Detect Game Name
-local function getGameName()
-    local success, info = pcall(function()
-        return MarketplaceService:GetProductInfo(game.PlaceId)
-    end)
-    if success and info then
-        return string.upper(info.Name)
-    end
-    return "UNKNOWN GAME"
-end
-
-local HWID = generateHWID()
-local GAME_NAME = getGameName()
-local TARGET_LINK = "https://link-target.net/4260973/DdlBGNdHRyrN"
-local SECRET_KEY = "VANGUARD_SECRET_KEY"
-
--- ScreenGui
+-- ══════════════════════════════════════
+--  SCREEN GUI
+-- ══════════════════════════════════════
 local sg = Instance.new("ScreenGui")
-sg.Name = "VanguardUI"
-sg.Parent = CoreGui
+sg.Name        = "VanguardUI"
+sg.Parent      = CoreGui
 sg.ResetOnSpawn = false
-sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+sg.IgnoreGuiInset = false
+sg.DisplayOrder = 999
 
--- Overlay mờ phía sau
+-- Overlay mờ
 local overlay = Instance.new("Frame")
-overlay.Parent = sg
-overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+overlay.Parent              = sg
+overlay.Size                = UDim2.new(1,0,1,0)
+overlay.BackgroundColor3    = Color3.fromRGB(0,0,0)
 overlay.BackgroundTransparency = 0.45
-overlay.BorderSizePixel = 0
-overlay.Size = UDim2.new(1, 0, 1, 0)
-overlay.ZIndex = 1
+overlay.BorderSizePixel     = 0
+overlay.ZIndex              = 10
 
--- Main Window
-local main = Instance.new("Frame")
-main.Name = "Main"
-main.Parent = sg
-main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-main.BorderSizePixel = 1
-main.BorderColor3 = Color3.fromRGB(42, 42, 42)
-main.Position = UDim2.new(0.5, -320, 0.5, -130)
-main.Size = UDim2.new(0, 640, 0, 260)
-main.Active = true
-main.Draggable = true
-main.ZIndex = 2
-
--- ===== TITLE BAR =====
-local titleBar = Instance.new("Frame")
-titleBar.Parent = main
-titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-titleBar.BorderSizePixel = 0
-titleBar.Size = UDim2.new(1, 0, 0, 34)
-titleBar.ZIndex = 3
-
--- Dot tím
-local dot = Instance.new("Frame")
-dot.Parent = titleBar
-dot.BackgroundColor3 = Color3.fromRGB(99, 102, 241)
-dot.BorderSizePixel = 0
-dot.Position = UDim2.new(0, 12, 0.5, -4)
-dot.Size = UDim2.new(0, 8, 0, 8)
-dot.ZIndex = 4
-local dotCorner = Instance.new("UICorner")
-dotCorner.CornerRadius = UDim.new(1, 0)
-dotCorner.Parent = dot
-
--- Title Text
-local titleText = Instance.new("TextLabel")
-titleText.Parent = titleBar
-titleText.BackgroundTransparency = 1
-titleText.Position = UDim2.new(0, 28, 0, 0)
-titleText.Size = UDim2.new(1, -100, 1, 0)
-titleText.Font = Enum.Font.Code
-titleText.Text = "VANGUARD | " .. GAME_NAME
-titleText.TextColor3 = Color3.fromRGB(228, 228, 231)
-titleText.TextSize = 11
-titleText.TextXAlignment = Enum.TextXAlignment.Left
-titleText.ZIndex = 4
-
--- Version Badge
-local versionLabel = Instance.new("TextLabel")
-versionLabel.Parent = titleBar
-versionLabel.BackgroundTransparency = 1
-versionLabel.Position = UDim2.new(1, -120, 0, 0)
-versionLabel.Size = UDim2.new(0, 110, 1, 0)
-versionLabel.Font = Enum.Font.Code
-versionLabel.Text = "STABLE_V6.1.0"
-versionLabel.TextColor3 = Color3.fromRGB(63, 63, 70)
-versionLabel.TextSize = 9
-versionLabel.TextXAlignment = Enum.TextXAlignment.Right
-versionLabel.ZIndex = 4
-
--- Divider bên dưới titlebar
-local divider = Instance.new("Frame")
-divider.Parent = main
-divider.BackgroundColor3 = Color3.fromRGB(34, 34, 34)
-divider.BorderSizePixel = 0
-divider.Position = UDim2.new(0, 0, 0, 34)
-divider.Size = UDim2.new(1, 0, 0, 1)
-divider.ZIndex = 3
-
--- ===== SIDEBAR =====
-local sidebar = Instance.new("Frame")
-sidebar.Parent = main
-sidebar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-sidebar.BorderSizePixel = 0
-sidebar.Position = UDim2.new(0, 0, 0, 35)
-sidebar.Size = UDim2.new(0, 180, 1, -35)
-sidebar.ZIndex = 3
-
--- Sidebar divider kẻ phải
-local sideDiv = Instance.new("Frame")
-sideDiv.Parent = sidebar
-sideDiv.BackgroundColor3 = Color3.fromRGB(34, 34, 34)
-sideDiv.BorderSizePixel = 0
-sideDiv.Position = UDim2.new(1, -1, 0, 0)
-sideDiv.Size = UDim2.new(0, 1, 1, 0)
-sideDiv.ZIndex = 4
-
--- Nav: AUTH SYSTEM (active)
-local navAuth = Instance.new("Frame")
-navAuth.Parent = sidebar
-navAuth.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-navAuth.BorderSizePixel = 0
-navAuth.Position = UDim2.new(0, 0, 0, 10)
-navAuth.Size = UDim2.new(1, -2, 0, 26)
-navAuth.ZIndex = 4
-
-local navAuthAccent = Instance.new("Frame")
-navAuthAccent.Parent = navAuth
-navAuthAccent.BackgroundColor3 = Color3.fromRGB(99, 102, 241)
-navAuthAccent.BorderSizePixel = 0
-navAuthAccent.Size = UDim2.new(0, 2, 1, 0)
-navAuthAccent.ZIndex = 5
-
-local navAuthLabel = Instance.new("TextLabel")
-navAuthLabel.Parent = navAuth
-navAuthLabel.BackgroundTransparency = 1
-navAuthLabel.Position = UDim2.new(0, 10, 0, 0)
-navAuthLabel.Size = UDim2.new(1, -10, 1, 0)
-navAuthLabel.Font = Enum.Font.Code
-navAuthLabel.Text = "AUTH SYSTEM"
-navAuthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-navAuthLabel.TextSize = 9
-navAuthLabel.TextXAlignment = Enum.TextXAlignment.Left
-navAuthLabel.ZIndex = 5
-
--- Nav: MODULE LIST (disabled)
-local navModule = Instance.new("TextLabel")
-navModule.Parent = sidebar
-navModule.BackgroundTransparency = 1
-navModule.Position = UDim2.new(0, 10, 0, 42)
-navModule.Size = UDim2.new(1, -10, 0, 26)
-navModule.Font = Enum.Font.Code
-navModule.Text = "MODULE LIST"
-navModule.TextColor3 = Color3.fromRGB(63, 63, 70)
-navModule.TextSize = 9
-navModule.TextXAlignment = Enum.TextXAlignment.Left
-navModule.ZIndex = 4
-
--- Nav: CONFIGURATION (disabled)
-local navConfig = Instance.new("TextLabel")
-navConfig.Parent = sidebar
-navConfig.BackgroundTransparency = 1
-navConfig.Position = UDim2.new(0, 10, 0, 70)
-navConfig.Size = UDim2.new(1, -10, 0, 26)
-navConfig.Font = Enum.Font.Code
-navConfig.Text = "CONFIGURATION"
-navConfig.TextColor3 = Color3.fromRGB(63, 63, 70)
-navConfig.TextSize = 9
-navConfig.TextXAlignment = Enum.TextXAlignment.Left
-navConfig.ZIndex = 4
-
--- Discord Button
-local discordBtn = Instance.new("TextButton")
-discordBtn.Parent = sidebar
-discordBtn.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-discordBtn.BorderSizePixel = 1
-discordBtn.BorderColor3 = Color3.fromRGB(42, 42, 42)
-discordBtn.Position = UDim2.new(0, 8, 1, -60)
-discordBtn.Size = UDim2.new(1, -16, 0, 22)
-discordBtn.Font = Enum.Font.Code
-discordBtn.Text = "OFFICIAL DISCORD"
-discordBtn.TextColor3 = Color3.fromRGB(129, 140, 248)
-discordBtn.TextSize = 9
-discordBtn.ZIndex = 4
-
--- Target Game label
-local gameLabel = Instance.new("TextLabel")
-gameLabel.Parent = sidebar
-gameLabel.BackgroundTransparency = 1
-gameLabel.Position = UDim2.new(0, 10, 1, -32)
-gameLabel.Size = UDim2.new(1, -14, 0, 12)
-gameLabel.Font = Enum.Font.Code
-gameLabel.Text = "TARGET GAME:"
-gameLabel.TextColor3 = Color3.fromRGB(63, 63, 70)
-gameLabel.TextSize = 8
-gameLabel.TextXAlignment = Enum.TextXAlignment.Left
-gameLabel.ZIndex = 4
-
-local gameNameLabel = Instance.new("TextLabel")
-gameNameLabel.Parent = sidebar
-gameNameLabel.BackgroundTransparency = 1
-gameNameLabel.Position = UDim2.new(0, 10, 1, -18)
-gameNameLabel.Size = UDim2.new(1, -14, 0, 14)
-gameNameLabel.Font = Enum.Font.Code
-gameNameLabel.Text = GAME_NAME
-gameNameLabel.TextColor3 = Color3.fromRGB(113, 113, 122)
-gameNameLabel.TextSize = 9
-gameNameLabel.TextXAlignment = Enum.TextXAlignment.Left
-gameNameLabel.TextTruncate = Enum.TextTruncate.AtEnd
-gameNameLabel.ZIndex = 4
-
--- ===== MAIN CONTENT PANEL =====
-local content = Instance.new("Frame")
-content.Parent = main
-content.BackgroundTransparency = 1
-content.Position = UDim2.new(0, 180, 0, 35)
-content.Size = UDim2.new(1, -180, 1, -35)
-content.ZIndex = 3
-
--- Title
-local verifyTitle = Instance.new("TextLabel")
-verifyTitle.Parent = content
-verifyTitle.BackgroundTransparency = 1
-verifyTitle.Position = UDim2.new(0, 24, 0, 22)
-verifyTitle.Size = UDim2.new(1, -48, 0, 16)
-verifyTitle.Font = Enum.Font.Code
-verifyTitle.Text = "VERIFICATION REQUIRED"
-verifyTitle.TextColor3 = Color3.fromRGB(244, 244, 245)
-verifyTitle.TextSize = 11
-verifyTitle.TextXAlignment = Enum.TextXAlignment.Left
-verifyTitle.ZIndex = 4
-
--- Description
-local desc = Instance.new("TextLabel")
-desc.Parent = content
-desc.BackgroundTransparency = 1
-desc.Position = UDim2.new(0, 24, 0, 40)
-desc.Size = UDim2.new(1, -48, 0, 30)
-desc.Font = Enum.Font.Code
-desc.Text = "To access " .. GAME_NAME .. " premium features, please\nprovide a unique 24-hour access key."
-desc.TextColor3 = Color3.fromRGB(82, 82, 91)
-desc.TextSize = 10
-desc.TextXAlignment = Enum.TextXAlignment.Left
-desc.TextYAlignment = Enum.TextYAlignment.Top
-desc.ZIndex = 4
-
--- Input Box
-local keyBox = Instance.new("TextBox")
-keyBox.Parent = content
-keyBox.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-keyBox.BorderSizePixel = 1
-keyBox.BorderColor3 = Color3.fromRGB(39, 39, 42)
-keyBox.Position = UDim2.new(0, 24, 0, 82)
-keyBox.Size = UDim2.new(1, -116, 0, 32)
-keyBox.Font = Enum.Font.Code
-keyBox.PlaceholderText = "ENTER KEY"
-keyBox.PlaceholderColor3 = Color3.fromRGB(39, 39, 42)
-keyBox.Text = ""
-keyBox.TextColor3 = Color3.fromRGB(129, 140, 248)
-keyBox.TextSize = 11
-keyBox.ClearTextOnFocus = false
-keyBox.ZIndex = 4
-
--- Verify Button
-local verifyBtn = Instance.new("TextButton")
-verifyBtn.Parent = content
-verifyBtn.BackgroundColor3 = Color3.fromRGB(79, 70, 229)
-verifyBtn.BorderSizePixel = 0
-verifyBtn.Position = UDim2.new(1, -84, 0, 82)
-verifyBtn.Size = UDim2.new(0, 80, 0, 32)
-verifyBtn.Font = Enum.Font.Code
-verifyBtn.Text = "VERIFY"
-verifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-verifyBtn.TextSize = 10
-verifyBtn.ZIndex = 4
-
--- Get Key Link
-local getKeyBtn = Instance.new("TextButton")
-getKeyBtn.Parent = content
-getKeyBtn.BackgroundTransparency = 1
-getKeyBtn.BorderSizePixel = 0
-getKeyBtn.Position = UDim2.new(0, 24, 0, 122)
-getKeyBtn.Size = UDim2.new(0, 160, 0, 18)
-getKeyBtn.Font = Enum.Font.Code
-getKeyBtn.Text = "CLICK HERE TO GET KEY"
-getKeyBtn.TextColor3 = Color3.fromRGB(113, 113, 122)
-getKeyBtn.TextSize = 9
-getKeyBtn.TextXAlignment = Enum.TextXAlignment.Left
-getKeyBtn.ZIndex = 4
-
--- Status Label
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Parent = content
-statusLabel.BackgroundTransparency = 1
-statusLabel.Position = UDim2.new(1, -200, 0, 122)
-statusLabel.Size = UDim2.new(0, 196, 0, 18)
-statusLabel.Font = Enum.Font.Code
-statusLabel.Text = "INITIALIZING SYSTEM"
-statusLabel.TextColor3 = Color3.fromRGB(82, 82, 91)
-statusLabel.TextSize = 9
-statusLabel.TextXAlignment = Enum.TextXAlignment.Right
-statusLabel.ZIndex = 4
-
--- ===== FOOTER =====
-local footer = Instance.new("Frame")
-footer.Parent = main
-footer.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-footer.BorderSizePixel = 0
-footer.Position = UDim2.new(0, 0, 1, -24)
-footer.Size = UDim2.new(1, 0, 0, 24)
-footer.ZIndex = 3
-
-local footerDiv = Instance.new("Frame")
-footerDiv.Parent = footer
-footerDiv.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-footerDiv.BorderSizePixel = 0
-footerDiv.Size = UDim2.new(1, 0, 0, 1)
-footerDiv.ZIndex = 4
-
-local footerLeft = Instance.new("TextLabel")
-footerLeft.Parent = footer
-footerLeft.BackgroundTransparency = 1
-footerLeft.Position = UDim2.new(0, 12, 0, 0)
-footerLeft.Size = UDim2.new(0.7, 0, 1, 0)
-footerLeft.Font = Enum.Font.Code
-footerLeft.Text = "GAME ID IDENTIFIED   •   HWID: " .. HWID
-footerLeft.TextColor3 = Color3.fromRGB(63, 63, 70)
-footerLeft.TextSize = 8
-footerLeft.TextXAlignment = Enum.TextXAlignment.Left
-footerLeft.ZIndex = 4
-
-local footerRight = Instance.new("TextLabel")
-footerRight.Parent = footer
-footerRight.BackgroundTransparency = 1
-footerRight.Position = UDim2.new(0.3, 0, 0, 0)
-footerRight.Size = UDim2.new(0.7, -12, 1, 0)
-footerRight.Font = Enum.Font.Code
-footerRight.Text = "ENCRYPTED SESSION"
-footerRight.TextColor3 = Color3.fromRGB(39, 39, 42)
-footerRight.TextSize = 8
-footerRight.TextXAlignment = Enum.TextXAlignment.Right
-footerRight.ZIndex = 4
-
--- ===== LOGIC =====
-local function setStatus(text, r, g, b)
-    statusLabel.Text = string.upper(text)
-    statusLabel.TextColor3 = Color3.fromRGB(r, g, b)
+-- ══════════════════════════════════════
+--  HELPER
+-- ══════════════════════════════════════
+local function makeCorner(parent, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius or 4)
+    c.Parent = parent
 end
 
--- Khởi động: set status sau 1.5s
-task.delay(1.5, function()
-    setStatus("System ready for " .. GAME_NAME, 113, 113, 122)
-end)
+local function makeStroke(parent, color, thickness)
+    local s = Instance.new("UIStroke")
+    s.Color     = color or Color3.fromRGB(50,50,65)
+    s.Thickness = thickness or 1
+    s.Parent    = parent
+end
 
--- GET KEY Button
-getKeyBtn.MouseButton1Click:Connect(function()
-    pcall(function() setclipboard(TARGET_LINK) end)
-    getKeyBtn.Text = "COPIED TO CLIPBOARD!"
-    getKeyBtn.TextColor3 = Color3.fromRGB(129, 140, 248)
-    setStatus("Link copied", 129, 140, 248)
-    task.delay(2, function()
-        getKeyBtn.Text = "CLICK HERE TO GET KEY"
-        getKeyBtn.TextColor3 = Color3.fromRGB(113, 113, 122)
+local function label(parent, text, size, color, bold, xa, ya)
+    local l = Instance.new("TextLabel")
+    l.Parent              = parent
+    l.BackgroundTransparency = 1
+    l.Size                = UDim2.new(1,0,1,0)
+    l.Text                = text
+    l.TextSize            = size or FS
+    l.Font                = bold and Enum.Font.GothamBold or Enum.Font.Gotham
+    l.TextColor3          = color or Color3.fromRGB(200,200,210)
+    l.TextXAlignment      = xa or Enum.TextXAlignment.Left
+    l.TextYAlignment      = ya or Enum.TextYAlignment.Center
+    l.TextWrapped         = true
+    l.ZIndex              = 20
+    return l
+end
+
+local function btn(parent, text, bg, fg, size)
+    local b = Instance.new("TextButton")
+    b.Parent              = parent
+    b.BackgroundColor3    = bg or Color3.fromRGB(50,50,140)
+    b.AutoButtonColor     = false
+    b.BorderSizePixel     = 0
+    b.Size                = size or UDim2.new(1,0,0, isMobile and 34 or 36)
+    b.Text                = text
+    b.TextSize            = FS
+    b.Font                = Enum.Font.GothamBold
+    b.TextColor3          = fg or Color3.fromRGB(255,255,255)
+    b.ZIndex              = 20
+    makeCorner(b, 3)
+    -- hover effect
+    b.MouseEnter:Connect(function()
+        b.BackgroundColor3 = Color3.new(
+            math.min(b.BackgroundColor3.R + 0.06, 1),
+            math.min(b.BackgroundColor3.G + 0.06, 1),
+            math.min(b.BackgroundColor3.B + 0.06, 1)
+        )
     end)
+    b.MouseLeave:Connect(function()
+        b.BackgroundColor3 = bg or Color3.fromRGB(50,50,140)
+    end)
+    return b
+end
+
+-- ══════════════════════════════════════
+--  MAIN WINDOW
+-- ══════════════════════════════════════
+local mf = Instance.new("Frame")
+mf.Name              = "Main"
+mf.Parent            = sg
+mf.BackgroundColor3  = Color3.fromRGB(14,14,20)
+mf.BorderSizePixel   = 0
+mf.Size              = UDim2.new(0, W, 0, H)
+mf.Position          = UDim2.new(0.5, -W/2, 0.5, -H/2)
+mf.Active            = true
+mf.Draggable         = true
+mf.ZIndex            = 11
+makeCorner(mf, 6)
+makeStroke(mf, Color3.fromRGB(45,45,65), 1)
+
+-- ── TITLEBAR ──────────────────────────
+local titlebar = Instance.new("Frame")
+titlebar.Parent           = mf
+titlebar.BackgroundColor3 = Color3.fromRGB(18,18,26)
+titlebar.BorderSizePixel  = 0
+titlebar.Size             = UDim2.new(1,0,0,TH)
+titlebar.ZIndex           = 12
+makeCorner(titlebar, 6)
+
+-- fix top corner only
+local titleFix = Instance.new("Frame")
+titleFix.Parent           = titlebar
+titleFix.BackgroundColor3 = Color3.fromRGB(18,18,26)
+titleFix.BorderSizePixel  = 0
+titleFix.Position         = UDim2.new(0,0,0.5,0)
+titleFix.Size             = UDim2.new(1,0,0.5,0)
+titleFix.ZIndex           = 12
+
+-- dot
+local dot = Instance.new("Frame")
+dot.Parent           = titlebar
+dot.BackgroundColor3 = Color3.fromRGB(100,102,241)
+dot.BorderSizePixel  = 0
+dot.Size             = UDim2.new(0,7,0,7)
+dot.Position         = UDim2.new(0,10,0.5,-3)
+dot.ZIndex           = 13
+makeCorner(dot, 10)
+
+-- title text
+local titleLbl = label(titlebar,
+    "VANGUARD HUB  |  " .. gameName:upper(),
+    FSS, Color3.fromRGB(160,160,200), true)
+titleLbl.Position = UDim2.new(0,24,0,0)
+titleLbl.Size     = UDim2.new(1,-90,1,0)
+titleLbl.ZIndex   = 13
+
+-- version badge
+local verBadge = Instance.new("Frame")
+verBadge.Parent           = titlebar
+verBadge.BackgroundColor3 = Color3.fromRGB(30,30,45)
+verBadge.BorderSizePixel  = 0
+verBadge.Size             = UDim2.new(0,70,0,18)
+verBadge.Position         = UDim2.new(1,-80,0.5,-9)
+verBadge.ZIndex           = 13
+makeCorner(verBadge, 3)
+local verLbl = label(verBadge, "V6.2 STABLE", FSS-1,
+    Color3.fromRGB(90,90,120), false,
+    Enum.TextXAlignment.Center)
+verLbl.ZIndex = 14
+
+-- close btn
+local closeBtn = Instance.new("TextButton")
+closeBtn.Parent              = titlebar
+closeBtn.BackgroundColor3    = Color3.fromRGB(160,40,40)
+closeBtn.BorderSizePixel     = 0
+closeBtn.Size                = UDim2.new(0,18,0,18)
+closeBtn.Position            = UDim2.new(1,-28,0.5,-9)
+closeBtn.Text                = "x"
+closeBtn.TextSize            = FSS
+closeBtn.Font                = Enum.Font.GothamBold
+closeBtn.TextColor3          = Color3.fromRGB(255,255,255)
+closeBtn.ZIndex              = 14
+makeCorner(closeBtn, 3)
+closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
+
+-- ── BODY CONTAINER ────────────────────
+local bodyFrame = Instance.new("Frame")
+bodyFrame.Parent              = mf
+bodyFrame.BackgroundTransparency = 1
+bodyFrame.BorderSizePixel     = 0
+bodyFrame.Position            = UDim2.new(0,0,0,TH)
+bodyFrame.Size                = UDim2.new(1,0,1,-TH - (isMobile and 0 or 28))
+bodyFrame.ZIndex              = 12
+
+-- ── SIDEBAR (desktop only) ────────────
+if not isMobile then
+    local sb = Instance.new("Frame")
+    sb.Parent              = bodyFrame
+    sb.BackgroundColor3    = Color3.fromRGB(11,11,18)
+    sb.BorderSizePixel     = 0
+    sb.Size                = UDim2.new(0,SW,1,0)
+    sb.ZIndex              = 13
+
+    local sbItems = {
+        {"AUTH SYSTEM", true},
+        {"MODULE LIST", false},
+        {"CONFIGURATION", false},
+    }
+    for i, item in ipairs(sbItems) do
+        local row = Instance.new("Frame")
+        row.Parent              = sb
+        row.BackgroundColor3    = item[2]
+            and Color3.fromRGB(25,25,45)
+            or  Color3.fromRGB(0,0,0)
+        row.BackgroundTransparency = item[2] and 0 or 1
+        row.BorderSizePixel     = 0
+        row.Size                = UDim2.new(1,0,0,32)
+        row.Position            = UDim2.new(0,0,0,(i-1)*34 + 10)
+        row.ZIndex              = 14
+
+        if item[2] then
+            local accent = Instance.new("Frame")
+            accent.Parent              = row
+            accent.BackgroundColor3    = Color3.fromRGB(100,102,241)
+            accent.BorderSizePixel     = 0
+            accent.Size                = UDim2.new(0,2,1,0)
+            accent.ZIndex              = 15
+        end
+
+        local rowLbl = label(row, item[1], FSS-1,
+            item[2] and Color3.fromRGB(160,160,220)
+                     or  Color3.fromRGB(70,70,90),
+            item[2])
+        rowLbl.Position = UDim2.new(0,10,0,0)
+        rowLbl.ZIndex   = 15
+    end
+
+    -- hwid at bottom of sidebar
+    local hwidLbl = label(sb, "HWID", FSS-2, Color3.fromRGB(55,55,75), false)
+    hwidLbl.Position = UDim2.new(0,8,1,-38)
+    hwidLbl.Size     = UDim2.new(1,-8,0,14)
+    hwidLbl.ZIndex   = 14
+
+    local hwidVal = label(sb, hwid, FSS-2, Color3.fromRGB(75,75,95), false)
+    hwidVal.Position = UDim2.new(0,8,1,-24)
+    hwidVal.Size     = UDim2.new(1,-8,0,20)
+    hwidVal.TextWrapped = true
+    hwidVal.ZIndex   = 14
+end
+
+-- ── MAIN CONTENT ──────────────────────
+local content = Instance.new("Frame")
+content.Parent              = bodyFrame
+content.BackgroundTransparency = 1
+content.BorderSizePixel     = 0
+content.Position            = UDim2.new(0, SW + (isMobile and 12 or 16), 0, 0)
+content.Size                = UDim2.new(1, -(SW + (isMobile and 24 or 32)), 1, 0)
+content.ZIndex              = 13
+
+-- title
+local authTitle = label(content,
+    "VERIFICATION REQUIRED",
+    isMobile and 13 or 14,
+    Color3.fromRGB(220,220,240), true)
+authTitle.Position = UDim2.new(0,0,0, isMobile and 12 or 16)
+authTitle.Size     = UDim2.new(1,0,0,20)
+authTitle.Font     = Enum.Font.GothamBold
+authTitle.ZIndex   = 14
+
+-- description
+local desc = label(content,
+    "Authenticate your session for " .. gameName .. ". Enter your 24-hour access key below.",
+    isMobile and 11 or 12,
+    Color3.fromRGB(110,110,140))
+desc.Position    = UDim2.new(0,0,0, isMobile and 38 or 44)
+desc.Size        = UDim2.new(1,0,0,30)
+desc.TextWrapped = true
+desc.ZIndex      = 14
+
+-- status bar
+local statusBar = Instance.new("Frame")
+statusBar.Parent              = content
+statusBar.BackgroundColor3    = Color3.fromRGB(10,10,18)
+statusBar.BorderSizePixel     = 0
+statusBar.Position            = UDim2.new(0,0,0, isMobile and 74 or 82)
+statusBar.Size                = UDim2.new(1,0,0,26)
+statusBar.ZIndex              = 14
+makeCorner(statusBar, 3)
+makeStroke(statusBar, Color3.fromRGB(35,35,55), 1)
+
+local statusDot = Instance.new("Frame")
+statusDot.Parent           = statusBar
+statusDot.BackgroundColor3 = Color3.fromRGB(80,80,80)
+statusDot.BorderSizePixel  = 0
+statusDot.Size             = UDim2.new(0,6,0,6)
+statusDot.Position         = UDim2.new(0,8,0.5,-3)
+statusDot.ZIndex           = 15
+makeCorner(statusDot, 10)
+
+local statusLbl = label(statusBar, "INITIALIZING SYSTEM...",
+    FSS-1, Color3.fromRGB(100,100,130))
+statusLbl.Position = UDim2.new(0,22,0,0)
+statusLbl.Size     = UDim2.new(1,-30,1,0)
+statusLbl.ZIndex   = 15
+
+-- key input
+local inputFrame = Instance.new("Frame")
+inputFrame.Parent              = content
+inputFrame.BackgroundColor3    = Color3.fromRGB(8,8,14)
+inputFrame.BorderSizePixel     = 0
+inputFrame.Position            = UDim2.new(0,0,0, isMobile and 108 or 118)
+inputFrame.Size                = UDim2.new(1,0,0, isMobile and 34 or 36)
+inputFrame.ZIndex              = 14
+makeCorner(inputFrame, 3)
+makeStroke(inputFrame, Color3.fromRGB(40,40,65), 1)
+
+local keyBox = Instance.new("TextBox")
+keyBox.Parent              = inputFrame
+keyBox.BackgroundTransparency = 1
+keyBox.BorderSizePixel     = 0
+keyBox.Position            = UDim2.new(0,10,0,0)
+keyBox.Size                = UDim2.new(1,-10,1,0)
+keyBox.Font                = Enum.Font.Code
+keyBox.PlaceholderText     = "XXXX-XXXX-XXXX-XXXX"
+keyBox.PlaceholderColor3   = Color3.fromRGB(55,55,75)
+keyBox.Text                = ""
+keyBox.TextColor3          = Color3.fromRGB(140,145,255)
+keyBox.TextSize            = FS
+keyBox.ClearTextOnFocus    = false
+keyBox.ZIndex              = 15
+
+-- button row
+local btnRow = Instance.new("Frame")
+btnRow.Parent              = content
+btnRow.BackgroundTransparency = 1
+btnRow.BorderSizePixel     = 0
+btnRow.Position            = UDim2.new(0,0,0, isMobile and 150 or 164)
+btnRow.Size                = UDim2.new(1,0,0, isMobile and 34 or 36)
+btnRow.ZIndex              = 14
+
+local btnGetKey = btn(btnRow, "GET KEY",
+    Color3.fromRGB(28,28,42),
+    Color3.fromRGB(160,160,200),
+    UDim2.new(0.48,0,1,0))
+btnGetKey.Position = UDim2.new(0,0,0,0)
+makeStroke(btnGetKey, Color3.fromRGB(50,50,70), 1)
+
+local btnVerify = btn(btnRow, "ACTIVATE",
+    Color3.fromRGB(55,52,160),
+    Color3.fromRGB(220,220,255),
+    UDim2.new(0.48,0,1,0))
+btnVerify.Position = UDim2.new(0.52,0,0,0)
+
+-- progress bar
+local progBg = Instance.new("Frame")
+progBg.Parent              = content
+progBg.BackgroundColor3    = Color3.fromRGB(10,10,18)
+progBg.BorderSizePixel     = 0
+progBg.Position            = UDim2.new(0,0,0, isMobile and 192 or 210)
+progBg.Size                = UDim2.new(1,0,0,3)
+progBg.ZIndex              = 14
+makeCorner(progBg, 2)
+
+local progFill = Instance.new("Frame")
+progFill.Parent              = progBg
+progFill.BackgroundColor3    = Color3.fromRGB(100,102,241)
+progFill.BorderSizePixel     = 0
+progFill.Size                = UDim2.new(0,0,1,0)
+progFill.ZIndex              = 15
+makeCorner(progFill, 2)
+
+-- ── FOOTER (desktop) ──────────────────
+if not isMobile then
+    local footer = Instance.new("Frame")
+    footer.Parent              = mf
+    footer.BackgroundColor3    = Color3.fromRGB(11,11,18)
+    footer.BorderSizePixel     = 0
+    footer.Position            = UDim2.new(0,0,1,-28)
+    footer.Size                = UDim2.new(1,0,0,28)
+    footer.ZIndex              = 12
+    makeCorner(footer, 6)
+
+    local footFix = Instance.new("Frame")
+    footFix.Parent              = footer
+    footFix.BackgroundColor3    = Color3.fromRGB(11,11,18)
+    footFix.BorderSizePixel     = 0
+    footFix.Size                = UDim2.new(1,0,0.5,0)
+    footFix.ZIndex              = 12
+
+    local footLbl = label(footer,
+        "HWID: " .. hwid .. "   |   ENCRYPTED SESSION   |   VANGUARD SECURE",
+        FSS-2, Color3.fromRGB(55,55,75), false, Enum.TextXAlignment.Center)
+    footLbl.ZIndex = 13
+end
+
+-- ══════════════════════════════════════
+--  LOGIC
+-- ══════════════════════════════════════
+local function setStatus(text, dotColor, textColor)
+    statusLbl.Text       = text
+    statusLbl.TextColor3 = textColor or Color3.fromRGB(100,100,130)
+    statusDot.BackgroundColor3 = dotColor or Color3.fromRGB(80,80,80)
+end
+
+local function setProgress(pct)
+    progFill.Size = UDim2.new(pct/100, 0, 1, 0)
+end
+
+-- Animate progress
+local function animateProgress(from, to, duration)
+    local steps = 20
+    local stepTime = duration / steps
+    local diff = to - from
+    for i = 1, steps do
+        task.wait(stepTime)
+        setProgress(from + (diff * i / steps))
+    end
+end
+
+task.spawn(function()
+    task.wait(0.8)
+    setStatus("GAME: " .. gameName:upper() .. " — READY",
+        Color3.fromRGB(100,102,241),
+        Color3.fromRGB(140,140,200))
+    animateProgress(0, 30, 0.6)
 end)
 
--- VERIFY Button
-verifyBtn.MouseButton1Click:Connect(function()
-    local key = keyBox.Text
+-- GET KEY button
+btnGetKey.MouseButton1Click:Connect(function()
+    pcall(function()
+        setclipboard("https://link-target.net/4260973/DdlBGNdHRyrN")
+    end)
+    btnGetKey.Text = "COPIED!"
+    btnGetKey.TextColor3 = Color3.fromRGB(100,102,241)
+    setStatus("KEY LINK COPIED — PASTE IN BROWSER",
+        Color3.fromRGB(250,200,50),
+        Color3.fromRGB(180,170,100))
+    task.wait(2.5)
+    btnGetKey.Text = "GET KEY"
+    btnGetKey.TextColor3 = Color3.fromRGB(160,160,200)
+    setStatus("AWAITING KEY INPUT...",
+        Color3.fromRGB(100,102,241),
+        Color3.fromRGB(130,130,180))
+end)
+
+-- VERIFY button
+btnVerify.MouseButton1Click:Connect(function()
+    local key = keyBox.Text:gsub("%s+","")
     if key == "" then
-        setStatus("No key provided", 248, 113, 113)
-        keyBox.BorderColor3 = Color3.fromRGB(153, 27, 27)
-        task.delay(1.5, function()
-            keyBox.BorderColor3 = Color3.fromRGB(39, 39, 42)
-        end)
+        setStatus("NO KEY PROVIDED",
+            Color3.fromRGB(200,50,50),
+            Color3.fromRGB(200,80,80))
+        makeStroke(inputFrame, Color3.fromRGB(150,30,30), 1)
+        task.wait(1.5)
+        makeStroke(inputFrame, Color3.fromRGB(40,40,65), 1)
         return
     end
 
-    verifyBtn.Text = "..."
-    verifyBtn.BackgroundColor3 = Color3.fromRGB(63, 63, 70)
-    setStatus("Authenticating...", 113, 113, 122)
+    btnVerify.Text = "CHECKING..."
+    btnVerify.BackgroundColor3 = Color3.fromRGB(40,40,60)
+    setStatus("CONNECTING TO AUTH SERVER...",
+        Color3.fromRGB(250,200,50),
+        Color3.fromRGB(180,170,80))
+    animateProgress(30, 70, 0.8)
 
-    task.delay(1.4, function()
-        if key == SECRET_KEY then
-            verifyBtn.Text = "SUCCESS!"
-            verifyBtn.BackgroundColor3 = Color3.fromRGB(22, 163, 74)
-            setStatus("Access granted", 74, 222, 128)
-            -- ✅ Dán script chính của bạn vào đây
-        else
-            verifyBtn.Text = "INVALID"
-            verifyBtn.BackgroundColor3 = Color3.fromRGB(153, 27, 27)
-            keyBox.BorderColor3 = Color3.fromRGB(153, 27, 27)
-            setStatus("Auth failed: invalid key", 248, 113, 113)
-            task.delay(2, function()
-                verifyBtn.Text = "VERIFY"
-                verifyBtn.BackgroundColor3 = Color3.fromRGB(79, 70, 229)
-                keyBox.BorderColor3 = Color3.fromRGB(39, 39, 42)
-            end)
-        end
-    end)
-end)
+    task.wait(0.9)
+    animateProgress(70, 95, 0.5)
+    task.wait(0.6)
 
--- Hover effect cho Verify button
-verifyBtn.MouseEnter:Connect(function()
-    if verifyBtn.Text == "VERIFY" then
-        verifyBtn.BackgroundColor3 = Color3.fromRGB(99, 102, 241)
-    end
-end)
-verifyBtn.MouseLeave:Connect(function()
-    if verifyBtn.Text == "VERIFY" then
-        verifyBtn.BackgroundColor3 = Color3.fromRGB(79, 70, 229)
+    if key == "VANGUARD_SECRET_KEY" then
+        setProgress(100)
+        btnVerify.Text = "ACCESS GRANTED"
+        btnVerify.BackgroundColor3 = Color3.fromRGB(20,100,50)
+        setStatus("AUTHENTICATED — LOADING MODULES",
+            Color3.fromRGB(50,200,80),
+            Color3.fromRGB(80,200,100))
+        task.wait(1.2)
+        sg:Destroy()
+        -- ← Paste script thật của bạn ở đây
+    else
+        setProgress(0)
+        btnVerify.Text = "INVALID KEY"
+        btnVerify.BackgroundColor3 = Color3.fromRGB(130,20,20)
+        setStatus("AUTH FAILED — INVALID KEY",
+            Color3.fromRGB(200,50,50),
+            Color3.fromRGB(200,70,70))
+        makeStroke(inputFrame, Color3.fromRGB(150,30,30), 1)
+        task.wait(2)
+        btnVerify.Text = "ACTIVATE"
+        btnVerify.BackgroundColor3 = Color3.fromRGB(55,52,160)
+        setStatus("READY — ENTER VALID KEY",
+            Color3.fromRGB(100,102,241),
+            Color3.fromRGB(120,120,180))
+        makeStroke(inputFrame, Color3.fromRGB(40,40,65), 1)
     end
 end)
